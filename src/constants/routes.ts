@@ -1,0 +1,168 @@
+export const ROUTES = {
+  PUBLIC: {
+    ROOT: '/',
+    WELCOME: '/welcome',
+    LOGIN: '/login',
+    REGISTER: '/register',
+    FORGOT_PASSWORD: '/forgot-password',
+    RESET_PASSWORD: '/reset-password',
+    OTP_VERIFICATION: '/otp-verification',
+    ROLE_SELECTION: '/role-selection',
+    MESS_PROFILE: '/mess/:messId',
+    PRIVACY_POLICY: '/privacy-policy',
+    TERMS_OF_SERVICE: '/terms-of-service',
+  },
+  USER: {
+    DASHBOARD: '/user',
+    PROFILE: '/user/profile',
+    NOTIFICATIONS: '/user/notifications',
+    BILLING: '/user/billing',
+    INVOICE_PREVIEW: '/user/billing/invoice/:planId',
+    CHAT: '/user/chat',
+    MENU_DETAIL: '/user/menu/:mealType',
+    APPLY_LEAVE: '/user/apply-leave',
+    PAYMENT_OPTIONS: '/user/payment-options',
+    MEAL_SCANNER: '/user/meal-scanner',
+    HOW_TO_USE: '/user/how-to-use',
+  },
+  MESS_OWNER: {
+    DASHBOARD: '/mess-owner/*',
+    PROFILE: '/mess-owner/profile',
+    BILLING: '/mess-owner/billing-payments',
+    BILLING_MEMBER_DETAIL: '/mess-owner/billing-payments/:membershipId',
+    PAYMENT_VERIFICATION_DETAIL: '/mess-owner/billing-payments/payment-verification/:requestId',
+    CHAT: '/mess-owner/chat',
+    FEEDBACK: '/mess-owner/feedback',
+    LEAVE: '/mess-owner/leave-management',
+    LEAVE_DETAILS: '/mess-owner/leave-management/:leaveId',
+    MESS_OFF_DAY_FORM: '/mess-owner/leave-management/mess-off-day-form',
+    MEAL: '/mess-owner/meal-management',
+    REPORTS: '/mess-owner/reports',
+    USERS: '/mess-owner/user-management',
+    USER_DETAILS: '/mess-owner/user-management/:userId',
+    JOIN_REQUESTS: '/mess-owner/join-requests',
+    SERVICES: '/mess-owner/services',
+    NOTIFICATIONS: '/mess-owner/notifications',
+    SETTINGS: '/mess-owner/settings',
+    PLATFORM_SUBSCRIPTION: '/mess-owner/platform-subscription',
+    SETTINGS_PROFILE: '/mess-owner/settings/mess-profile',
+    SETTINGS_MEAL_PLANS: '/mess-owner/settings/mess-plans/*',
+    SETTINGS_OPERATING_HOURS: '/mess-owner/settings/operating-hours',
+    SETTINGS_PAYMENT: '/mess-owner/settings/payment',
+    SETTINGS_SECURITY: '/mess-owner/settings/security',
+    SETTINGS_QR_VERIFICATION: '/mess-owner/settings/qr-verification',
+    HOW_TO_USE: '/mess-owner/how-to-use',
+  },
+  ADMIN: {
+    DASHBOARD: '/admin',
+    PROFILE: '/admin/profile',
+    BILLING: '/admin/billing',
+    CHAT: '/admin/chat',
+    NOTIFICATIONS: '/admin/notifications',
+    MESS_OWNERS: '/admin/mess-owners',
+    SUBSCRIPTIONS: '/admin/subscriptions',
+    USER_MANAGEMENT: '/admin/users',
+    SYSTEM_MONITORING: '/admin/system',
+    SETTINGS: '/admin/settings',
+    AD_SETTINGS: '/admin/ad-settings',
+    DEFAULT_MEAL_PLANS: '/admin/default-meal-plans',
+    TUTORIAL_VIDEOS: '/admin/tutorial-videos',
+  },
+  DEV: {
+    PWA_TEST: '/dev/pwa-test',
+    PWA_DEBUG: '/dev/pwa-debug',
+    NOTIFICATION_TEST: '/dev/notification-test',
+    PERFORMANCE: '/dev/performance',
+    DATA_PERSISTENCE: '/dev/data-persistence',
+    QUICK_LOGIN: '/dev/quick-login',
+  },
+};
+
+// Route Parameters
+export const ROUTE_PARAMS = {
+  MESS_ID: ':id',
+  USER_ID: ':userId',
+  PAYMENT_ID: ':paymentId',
+  NOTIFICATION_ID: ':notificationId',
+  DATE: ':date',
+} as const;
+
+// Route Guards
+export const ROUTE_GUARDS = {
+  AUTH_REQUIRED: 'auth-required',
+  ROLE_REQUIRED: 'role-required',
+  MESS_OWNER_ONLY: 'mess-owner-only',
+  ADMIN_ONLY: 'admin-only',
+  USER_ONLY: 'user-only',
+} as const;
+
+// Navigation Structure
+export const NAVIGATION = {
+  PUBLIC: [
+    // These keys do not exist in ROUTES, so comment out or remove
+    // { path: ROUTES.PUBLIC.HOME, label: 'Home', icon: 'home' },
+    // { path: ROUTES.PUBLIC.ABOUT, label: 'About', icon: 'info' },
+    // { path: ROUTES.PUBLIC.CONTACT, label: 'Contact', icon: 'contact' },
+  ],
+  USER: [
+    { path: ROUTES.USER.DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
+    { path: ROUTES.USER.BILLING, label: 'Billing', icon: 'billing' },
+    { path: ROUTES.USER.APPLY_LEAVE, label: 'Apply Leave', icon: 'calendar' },
+    { path: ROUTES.USER.MEAL_SCANNER, label: 'Verify Membership', icon: 'qr-code' },
+    { path: ROUTES.USER.NOTIFICATIONS, label: 'Notifications', icon: 'notifications' },
+    { path: ROUTES.USER.PROFILE, label: 'Profile', icon: 'user' },
+    { path: ROUTES.USER.CHAT, label: 'Chat', icon: 'chat' },
+    { path: ROUTES.USER.HOW_TO_USE, label: 'How to Use', icon: 'academic-cap' },
+  ],
+  MESS_OWNER: [
+    { path: ROUTES.MESS_OWNER.DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
+    { path: ROUTES.MESS_OWNER.USERS, label: 'User Management', icon: 'users' },
+    { path: ROUTES.MESS_OWNER.MEAL, label: 'Meal Management', icon: 'restaurant_menu' },
+    { path: ROUTES.MESS_OWNER.LEAVE, label: 'Leave Management', icon: 'leave' },
+    { path: ROUTES.MESS_OWNER.BILLING, label: 'Billing & Payments', icon: 'billing' },
+    { path: ROUTES.MESS_OWNER.PLATFORM_SUBSCRIPTION, label: 'Platform Subscription', icon: 'rectangle-stack' },
+    { path: ROUTES.MESS_OWNER.FEEDBACK, label: 'Feedback & Complaints', icon: 'feedback' },
+    { path: ROUTES.MESS_OWNER.CHAT, label: 'Chat & Community', icon: 'chat' },
+    { path: ROUTES.MESS_OWNER.REPORTS, label: 'Reports & Analytics', icon: 'analytics' },
+    { path: ROUTES.MESS_OWNER.SETTINGS, label: 'Settings', icon: 'settings' },
+    { path: ROUTES.MESS_OWNER.HOW_TO_USE, label: 'How to Use', icon: 'academic-cap' },
+  ],
+  ADMIN: [
+    { path: ROUTES.ADMIN.DASHBOARD, label: 'Dashboard', icon: 'dashboard' },
+    { path: ROUTES.ADMIN.USER_MANAGEMENT, label: 'User Management', icon: 'users' },
+    { path: ROUTES.ADMIN.MESS_OWNERS, label: 'Mess Owners', icon: 'building-office' },
+    { path: ROUTES.ADMIN.DEFAULT_MEAL_PLANS, label: 'Default Meal Plans', icon: 'clipboard-document-list' },
+    { path: ROUTES.ADMIN.BILLING, label: 'Billing & Payments', icon: 'credit-card' },
+    { path: ROUTES.ADMIN.SYSTEM_MONITORING, label: 'System Monitoring', icon: 'chart-bar' },
+    { path: ROUTES.ADMIN.SETTINGS, label: 'Settings', icon: 'cog-6-tooth' },
+    { path: ROUTES.ADMIN.AD_SETTINGS, label: 'Ad Services', icon: 'megaphone' },
+    { path: ROUTES.ADMIN.PROFILE, label: 'Profile', icon: 'user' },
+    { path: ROUTES.ADMIN.CHAT, label: 'Chat', icon: 'chat-bubble-left-right' },
+    { path: ROUTES.ADMIN.SUBSCRIPTIONS, label: 'Subscriptions', icon: 'rectangle-stack' },
+    { path: ROUTES.ADMIN.TUTORIAL_VIDEOS, label: 'Tutorial Videos', icon: 'play' },
+  ],
+} as const;
+
+// Breadcrumb Configuration
+export const BREADCRUMB_CONFIG = {
+  [ROUTES.USER.DASHBOARD]: [{ label: 'Dashboard', path: ROUTES.USER.DASHBOARD }],
+  [ROUTES.MESS_OWNER.DASHBOARD]: [{ label: 'Dashboard', path: ROUTES.MESS_OWNER.DASHBOARD }],
+  [ROUTES.MESS_OWNER.USERS]: [
+    { label: 'Dashboard', path: ROUTES.MESS_OWNER.DASHBOARD },
+    { label: 'User Management', path: ROUTES.MESS_OWNER.USERS },
+  ],
+  [ROUTES.MESS_OWNER.USER_DETAILS]: [
+    { label: 'Dashboard', path: ROUTES.MESS_OWNER.DASHBOARD },
+    { label: 'User Management', path: ROUTES.MESS_OWNER.USERS },
+    { label: 'User Details', path: '' },
+  ],
+  [ROUTES.MESS_OWNER.MEAL]: [
+    { label: 'Dashboard', path: ROUTES.MESS_OWNER.DASHBOARD },
+    { label: 'Meal Management', path: ROUTES.MESS_OWNER.MEAL },
+  ],
+  [ROUTES.ADMIN.DASHBOARD]: [{ label: 'Admin Dashboard', path: ROUTES.ADMIN.DASHBOARD }],
+  [ROUTES.ADMIN.MESS_OWNERS]: [
+    { label: 'Admin Dashboard', path: ROUTES.ADMIN.DASHBOARD },
+    { label: 'Mess Owners', path: ROUTES.ADMIN.MESS_OWNERS },
+  ],
+} as const; 

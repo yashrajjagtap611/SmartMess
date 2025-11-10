@@ -1,0 +1,93 @@
+[
+  {
+    "firstName": "Aarav",
+    "lastName": "Patil",
+    "email": "user1@example.com",
+    "phone": "+919800000001",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Dehu Phata, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Siya",
+    "lastName": "Joshi",
+    "email": "user2@example.com",
+    "phone": "+919800000002",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Dehu Phata, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Vihaan",
+    "lastName": "Kulkarni",
+    "email": "user3@example.com",
+    "phone": "+919800000003",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Dehu Phata, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Anaya",
+    "lastName": "Deshmukh",
+    "email": "user4@example.com",
+    "phone": "+919800000004",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Dehu Phata, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Advait",
+    "lastName": "Shinde",
+    "email": "user5@example.com",
+    "phone": "+919800000005",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Dehu Phata, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Ira",
+    "lastName": "More",
+    "email": "user6@example.com",
+    "phone": "+919800000006",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Kothrud, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Reyansh",
+    "lastName": "Jadhav",
+    "email": "user7@example.com",
+    "phone": "+919800000007",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Viman Nagar, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Mira",
+    "lastName": "Kamble",
+    "email": "user8@example.com",
+    "phone": "+919800000008",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Hinjawadi, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Kabir",
+    "lastName": "Chavan",
+    "email": "user9@example.com",
+    "phone": "+919800000009",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Shivajinagar, Pune, Maharashtra"
+  },
+  {
+    "firstName": "Aditi",
+    "lastName": "Gore",
+    "email": "user10@example.com",
+    "phone": "+919800000010",
+    "password": "User@12345",
+    "role": "user",
+    "address": "Kharadi, Pune, Maharashtra"
+  }
+]
+

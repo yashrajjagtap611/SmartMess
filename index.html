@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/SmartMess-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0ea5e9" />
+    <meta name="description" content="A comprehensive platform for managing mess operations, connecting students with mess owners, and streamlining meal plans and payments." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="SmartMess" />
+    <meta name="msapplication-TileColor" content="#0ea5e9" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.svg" />
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="/icons/icon-32x32.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="16x16" href="/icons/icon-16x16.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.svg" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.svg" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.svg" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.svg" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.svg" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.svg" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.svg" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.svg" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.svg" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Preconnect to external domains for better performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <title>SmartMess - Smart Mess Management</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <!-- Prevent theme flickering by applying theme immediately -->
+    <script>
+      (function() {
+        try {
+          const stored = localStorage.getItem('SmartMess-theme');
+          const theme = stored === 'dark' || stored === 'light' || stored === 'system' ? stored : 'system';
+          const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (error) {
+          console.warn('Theme initialization error:', error);
+        }
+      })();
+    </script>
+    
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- PWA is now handled by the PWAInstallPrompt component -->
+  </body>
+</html>

@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+
+1. Use Barrel Files for Feature Folders
+2. Group Routes by Role/Feature
+3. Keep App.tsx Focused on Routing and Global Providers
+4. Use Layout Components for Consistency
+5. Lazy Load Feature Pages
+6. Centralize Route Paths
+7. Keep Imports Organized
+8. Document with Comments
+Use comments to explain sections, especially for complex routing logic.
+9. Remove Dead Code
+Delete unused imports, routes, and comments regularly.
+
+
+
+make profetion file structure for project files and folders and make it easy to find the files you need. you can use this rules in your project.
+backend/
+├── src/
+│   ├── config/           # Centralized configuration
+│   ├── middleware/       # Security, validation, auth
+│   ├── models/          # MongoDB models
+│   ├── routes/          # API endpoints
+│   ├── services/        # Business logic
+│   ├── utils/           # Logging, error handling
+│   └── server.ts        # Main application
+├── tests/               # Test files
+├── logs/                # Application logs
+├── uploads/             # File uploads
+├── dist/                # Compiled code
+├── .eslintrc.js         # Code quality
+├── Dockerfile           # Containerization
+├── ecosystem.config.js  # PM2 configuration
+├── env.example          # Environment template
+└── README.md            # Documentation

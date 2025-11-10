@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: SmartMess-backend
+    env_file: ./backend/.env
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+    depends_on:
+      - mongo
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  mongo:
+    image: mongo:5
+    container_name: SmartMess-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+# Uncomment and configure if you have a frontend Dockerfile
+#  frontend:
+#    build: ./frontend
+#    container_name: SmartMess-frontend
+#    env_file: ./frontend/.env
+#    ports:
+#      - "5173:5173"
+#    depends_on:
+#      - backend
+
+volumes:
+  mongo_data:

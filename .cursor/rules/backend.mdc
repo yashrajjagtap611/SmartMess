@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+---
+Add new backend endpoints and database fields as needed.
+corectly integret to frontend data base and backend.
+beforue api conection check the endpoint is working fine.and frontend side also.
+
+
+Correctly Integrate to Frontend, Database, and Backend
+Any changes made to the backend (new endpoints, new fields, etc.) must be:
+Properly connected to the frontend, ensuring the frontend can consume the new/updated API.
+Properly connected to the database, ensuring data flows correctly between the backend and the database.
+Fully integrated, so that the backend, database, and frontend work together seamlessly.
+every time sugest this real if any rull whant to add in rulls 

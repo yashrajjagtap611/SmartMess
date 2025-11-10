@@ -1,0 +1,1 @@
+export { IndividualChatModal } from './IndividualChatModal';

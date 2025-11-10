@@ -1,0 +1,6 @@
+# This is a placeholder for icon-120x120.png
+# In a real implementation, you would:
+# 1. Use a proper image processing library like sharp or jimp
+# 2. Resize your base icon to 120x120 pixels
+# 3. Convert to PNG format
+# 4. Save as icon-120x120.png

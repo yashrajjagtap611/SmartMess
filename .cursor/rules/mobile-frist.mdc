@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+Mobile-First Design
+Ensure all features are touch-friendly and performant on mobile.
+user same desing for header for desktop and mobile.donot creat any tiem defrent design for mobile or desktop. amke reuseble component for header,footer etc.
+Polish the UX (mobile, accessibility, performance, internationalization).
