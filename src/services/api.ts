@@ -7,18 +7,30 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 // API Configuration - Use relative URL since Vite proxy handles backend routing
-// Normalize URL: remove trailing slashes and ensure proper format
+// Normalize URL: handle all edge cases to prevent double slashes
 const rawApiUrl = import.meta.env['VITE_API_BASE_URL'] || '/api';
-// Remove all trailing slashes, then ensure it ends with /api if it's a full URL without /api
-let normalizedUrl = rawApiUrl.replace(/\/+$/, '');
-// If it's a full URL (starts with http) and doesn't end with /api, add it
-if (normalizedUrl.startsWith('http') && !normalizedUrl.endsWith('/api')) {
-  // Check if it already has /api in the path
-  if (!normalizedUrl.includes('/api')) {
-    normalizedUrl = normalizedUrl + '/api';
-  }
+
+let API_BASE_URL: string;
+if (rawApiUrl.startsWith('http')) {
+  // Full URL: normalize by removing trailing slashes and ensuring /api is present
+  let normalized = rawApiUrl.replace(/\/+$/, ''); // Remove all trailing slashes
+  // Remove /api from end if present (we'll add it back)
+  normalized = normalized.replace(/\/api\/?$/, '');
+  // Add /api (without leading slash since normalized doesn't end with slash)
+  API_BASE_URL = normalized + '/api';
+} else {
+  // Relative URL: just remove trailing slashes
+  API_BASE_URL = rawApiUrl.replace(/\/+$/, '');
 }
-const API_BASE_URL = normalizedUrl;
+
+// Debug log in development
+if (import.meta.env.DEV) {
+  console.log('API Base URL configured:', {
+    raw: rawApiUrl,
+    normalized: API_BASE_URL
+  });
+}
+
 const API_TIMEOUT = 30000; // 30 seconds for better reliability
 
 // Create axios instance
