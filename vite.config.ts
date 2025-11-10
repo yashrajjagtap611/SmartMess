@@ -73,11 +73,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
+      strategies: 'generateSW',
+      filename: 'sw.js',
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api/, /^\/_/, /^\/uploads/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -147,7 +152,7 @@ export default defineConfig({
         ]
       },
       manifest: {
-        name: 'SmartMess',
+        name: 'SmartMess - Smart Mess Management',
         short_name: 'SmartMess',
         description: 'A comprehensive platform for managing mess operations, connecting students with mess owners, and streamlining meal plans and payments.',
         theme_color: '#0ea5e9',
@@ -158,6 +163,45 @@ export default defineConfig({
         orientation: 'portrait-primary',
         lang: 'en',
         categories: ['food', 'lifestyle', 'productivity'],
+        prefer_related_applications: false,
+        shortcuts: [
+          {
+            name: 'Dashboard',
+            short_name: 'Dashboard',
+            description: 'View your mess dashboard',
+            url: '/dashboard',
+            icons: [
+              {
+                src: '/icons/dashboard-96x96.png',
+                sizes: '96x96'
+              }
+            ]
+          },
+          {
+            name: 'Find Mess',
+            short_name: 'Find Mess',
+            description: 'Discover available messes',
+            url: '/dashboard?tab=posted_mess',
+            icons: [
+              {
+                src: '/icons/search-96x96.png',
+                sizes: '96x96'
+              }
+            ]
+          },
+          {
+            name: 'Notifications',
+            short_name: 'Notifications',
+            description: 'View your notifications',
+            url: '/notifications',
+            icons: [
+              {
+                src: '/icons/notification-96x96.png',
+                sizes: '96x96'
+              }
+            ]
+          }
+        ],
         icons: [
           {
             src: '/icons/icon-72x72.png',

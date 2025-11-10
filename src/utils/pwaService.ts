@@ -17,18 +17,27 @@ export class PWAService {
   async registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
     if ('serviceWorker' in navigator) {
       try {
-        // Skip service worker registration in development
-        if (import.meta.env.DEV) {
+        // vite-plugin-pwa handles registration automatically in production
+        // But we can still get the registration if it exists
+        if (navigator.serviceWorker.controller) {
+          const registration = await navigator.serviceWorker.ready;
+          this.registration = registration;
+          this.attachUpdateListener(registration);
+          console.log('SW: Service worker already registered');
+          return registration;
+        }
+        
+        // Wait for service worker to be ready (vite-plugin-pwa auto-registers)
+        if (import.meta.env.PROD) {
+          const registration = await navigator.serviceWorker.ready;
+          this.registration = registration;
+          this.attachUpdateListener(registration);
+          console.log('SW: Service worker registered successfully');
+          return registration;
+        } else {
           console.log('SW: Service worker registration skipped in development');
           return null;
         }
-        
-        const registration = await navigator.serviceWorker.register('/sw.js', {
-          scope: '/',
-        });
-        
-        console.log('SW: Service worker registered successfully');
-        return registration;
       } catch (error) {
         console.error('SW: Service worker registration failed:', error);
         return null;
@@ -145,8 +154,11 @@ export class PWAService {
 
   isInstallable(): boolean {
     // Check if the app can be installed
+    // For PWA installability, we need:
+    // 1. Service worker support
+    // 2. A registered service worker
+    // 3. The beforeinstallprompt event will be fired by the browser
     return 'serviceWorker' in navigator && 
-           'PushManager' in window && 
            this.registration !== null;
   }
 

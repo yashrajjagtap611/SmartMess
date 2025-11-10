@@ -129,6 +129,10 @@ function App() {
       pwaInitialized = true;
       
       try {
+        // Register service worker (vite-plugin-pwa handles this automatically, but we ensure it's ready)
+        await pwaService.registerServiceWorker();
+        
+        // Set up update listeners
         pwaService.onUpdateAvailable(() => {
           if (!isMounted) return;
           console.log('PWA: Update available');
@@ -157,6 +161,7 @@ function App() {
           });
         });
         
+        // Check if app is installable (for install prompt)
         if (isMounted && pwaService.isInstallable()) {
           setShowInstallPrompt(true);
         }
