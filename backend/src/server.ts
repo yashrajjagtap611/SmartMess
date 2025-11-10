@@ -61,12 +61,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     'http://127.0.0.1:3000',
     'http://[::1]:5173',
     'http://[::1]:3000',
+    'https://smart-mess-ten.vercel.app',
+    'https://smart-mess-ten.vercel.app/',
     config.frontendUrl
-  ];
+  ].filter(Boolean); // Remove any undefined values
   
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  } else {
+  // Normalize origin by removing trailing slash for comparison
+  const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : null;
+  const normalizedAllowedOrigins = allowedOrigins.map(o => String(o).replace(/\/+$/, ''));
+  
+  if (normalizedOrigin && normalizedAllowedOrigins.includes(normalizedOrigin)) {
+    res.header('Access-Control-Allow-Origin', origin!);
+  } else if (config.frontendUrl) {
     res.header('Access-Control-Allow-Origin', config.frontendUrl);
   }
   

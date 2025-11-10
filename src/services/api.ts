@@ -7,7 +7,18 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
 }
 
 // API Configuration - Use relative URL since Vite proxy handles backend routing
-const API_BASE_URL = import.meta.env['VITE_API_BASE_URL'] || '/api';
+// Normalize URL: remove trailing slashes and ensure proper format
+const rawApiUrl = import.meta.env['VITE_API_BASE_URL'] || '/api';
+// Remove all trailing slashes, then ensure it ends with /api if it's a full URL without /api
+let normalizedUrl = rawApiUrl.replace(/\/+$/, '');
+// If it's a full URL (starts with http) and doesn't end with /api, add it
+if (normalizedUrl.startsWith('http') && !normalizedUrl.endsWith('/api')) {
+  // Check if it already has /api in the path
+  if (!normalizedUrl.includes('/api')) {
+    normalizedUrl = normalizedUrl + '/api';
+  }
+}
+const API_BASE_URL = normalizedUrl;
 const API_TIMEOUT = 30000; // 30 seconds for better reliability
 
 // Create axios instance
@@ -28,7 +39,8 @@ apiClient.interceptors.request.use(
   (config: ExtendedAxiosRequestConfig) => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      // Type assertion for headers - InternalAxiosRequestConfig has headers
+      (config.headers as Record<string, any>).Authorization = `Bearer ${token}`;
     }
     
     // Add request timestamp for debugging
@@ -36,7 +48,7 @@ apiClient.interceptors.request.use(
     
     return config;
   },
-  (error) => {
+  (error: any) => {
     console.error('Request interceptor error:', error);
     return Promise.reject({
       message: 'Failed to make request',
@@ -63,7 +75,7 @@ apiClient.interceptors.response.use(
     
     return response;
   },
-  (error) => {
+  (error: any) => {
     // Import error handler dynamically to avoid circular dependencies
     import('@/utils/errorHandler').then(({ ErrorHandler }) => {
       const appError = ErrorHandler.handleApiError(error);
