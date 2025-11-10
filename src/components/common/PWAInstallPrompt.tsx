@@ -14,30 +14,41 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface PWAInstallPromptProps {
   className?: string;
-  variant?: 'banner' | 'modal' | 'inline';
+  variant?: 'banner' | 'modal' | 'inline' | 'top-popup';
   autoShow?: boolean;
   onDismiss?: () => void;
+  autoHideDelay?: number; // Auto-hide delay in milliseconds (default: 5000ms = 5 seconds)
 }
+
+const PWA_INSTALLED_KEY = 'pwa_installed';
 
 export default function PWAInstallPrompt({ 
   className = '', 
-  variant = 'banner',
+  variant = 'top-popup',
   autoShow = true,
-  onDismiss
+  onDismiss,
+  autoHideDelay = 5000 // 5 seconds default
 }: PWAInstallPromptProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
     const checkInstallation = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches) {
+      // Check localStorage first
+      const installed = localStorage.getItem(PWA_INSTALLED_KEY) === 'true';
+      
+      if (installed || window.matchMedia('(display-mode: standalone)').matches) {
         setIsInstalled(true);
         setIsInstallable(false);
         setShowPrompt(false);
+        if (installed) {
+          localStorage.setItem(PWA_INSTALLED_KEY, 'true');
+        }
       } else {
         setIsInstalled(false);
       }
@@ -49,8 +60,11 @@ export default function PWAInstallPrompt({
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
       
-      if (autoShow) {
+      // Always show if not installed (ignore dismissed state - show every time)
+      if (autoShow && !isInstalled) {
         setShowPrompt(true);
+        // Trigger slide-in animation after a small delay
+        setTimeout(() => setIsVisible(true), 100);
       }
     };
 
@@ -59,10 +73,38 @@ export default function PWAInstallPrompt({
       setIsInstalled(true);
       setIsInstallable(false);
       setShowPrompt(false);
+      setIsVisible(false);
       setDeferredPrompt(null);
+      localStorage.setItem(PWA_INSTALLED_KEY, 'true');
     };
 
     checkInstallation();
+
+    // Check if installable on mount (for cases where event already fired or as fallback)
+    // Show prompt if service worker is registered and app is not installed
+    if (!isInstalled && 'serviceWorker' in navigator) {
+      // Small delay to ensure service worker is ready
+      const checkServiceWorker = async () => {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          if (registration && !isInstalled) {
+            // If we have a service worker, consider it installable
+            // The beforeinstallprompt event will provide the actual install capability
+            setIsInstallable(true);
+            if (autoShow) {
+              setShowPrompt(true);
+              setTimeout(() => setIsVisible(true), 100);
+            }
+          }
+        } catch (error) {
+          console.log('Service worker not ready yet');
+        }
+      };
+      
+      // Check immediately and also after a delay
+      checkServiceWorker();
+      setTimeout(checkServiceWorker, 1500);
+    }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -71,7 +113,20 @@ export default function PWAInstallPrompt({
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [autoShow]);
+  }, [autoShow, isInstalled]);
+
+  // Auto-hide after delay
+  useEffect(() => {
+    if (showPrompt && isVisible && variant === 'top-popup') {
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        // Hide the prompt after animation
+        setTimeout(() => setShowPrompt(false), 300);
+      }, autoHideDelay);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showPrompt, isVisible, autoHideDelay, variant]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -89,9 +144,12 @@ export default function PWAInstallPrompt({
         console.log('PWA: User accepted the install prompt');
         setIsInstalled(true);
         setIsInstallable(false);
-        setShowPrompt(false);
+        setIsVisible(false);
+        setTimeout(() => setShowPrompt(false), 300);
+        localStorage.setItem(PWA_INSTALLED_KEY, 'true');
       } else {
         console.log('PWA: User dismissed the install prompt');
+        // Don't set dismissed - show again next time
       }
     } catch (error) {
       console.error('PWA: Error during install:', error);
@@ -102,13 +160,65 @@ export default function PWAInstallPrompt({
   };
 
   const handleDismiss = () => {
-    setShowPrompt(false);
-    onDismiss?.();
+    setIsVisible(false);
+    // Hide after animation
+    setTimeout(() => {
+      setShowPrompt(false);
+      onDismiss?.();
+    }, 300);
+    // Note: We don't save dismissed state - it will show again next time
   };
 
   // Don't render if app is already installed or not installable
   if (isInstalled || !isInstallable || !showPrompt) {
     return null;
+  }
+
+  // Top popup variant - slides down from top (toast-like)
+  if (variant === 'top-popup') {
+    return (
+      <div 
+        className={`fixed top-4 left-1/2 -translate-x-1/2 z-[9999] max-w-[420px] w-full mx-4 pointer-events-auto ${
+          isVisible 
+            ? 'animate-in slide-in-from-top-2 fade-in duration-300' 
+            : 'animate-out slide-out-to-top-2 fade-out duration-200 pointer-events-none'
+        } ${className}`}
+      >
+        <div className="group relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-lg border bg-card/95 backdrop-blur-sm border-border text-foreground shadow-xl ring-1 ring-border/50 p-4 pr-10 transition-all">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <DevicePhoneMobileIcon className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold leading-none tracking-tight truncate">
+                Install SmartMess
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                Get the app for a better experience
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button
+              onClick={handleInstallClick}
+              disabled={isInstalling || !deferredPrompt}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed h-8 px-3 text-xs"
+              title={!deferredPrompt ? 'Installation will be available shortly' : ''}
+            >
+              {isInstalling ? 'Installing...' : 'Install'}
+            </Button>
+          </div>
+          
+          <button
+            onClick={handleDismiss}
+            className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground/70 opacity-70 transition-all hover:opacity-100 hover:bg-accent hover:text-accent-foreground focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-label="Close"
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (variant === 'modal') {

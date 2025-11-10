@@ -117,7 +117,6 @@ import FeedbackComplaintsDemo from '@/pages/FeedbackComplaintsDemo';
 
 function App() {
   const [showOfflineContent, setShowOfflineContent] = useState(false);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -161,10 +160,7 @@ function App() {
           });
         });
         
-        // Check if app is installable (for install prompt)
-        if (isMounted && pwaService.isInstallable()) {
-          setShowInstallPrompt(true);
-        }
+        // PWA Install Prompt is now handled by the PWAInstallPrompt component itself
       } catch (error) {
         console.warn('PWA initialization failed:', error);
       }
@@ -225,14 +221,12 @@ function App() {
           {/* Offline Banner for Authenticated Users */}
           <OfflineBanner className="fixed top-0 left-0 right-0 z-50 rounded-none border-t-0 border-l-0 border-r-0" />
           
-          {/* PWA Install Prompt */}
-          {showInstallPrompt && (
-            <PWAInstallPrompt 
-              variant="banner"
-              onDismiss={() => setShowInstallPrompt(false)}
-              className="fixed top-0 left-4 right-4 z-40 mt-16"
-            />
-          )}
+          {/* PWA Install Prompt - Top Popup */}
+          <PWAInstallPrompt 
+            variant="top-popup"
+            autoShow={true}
+            autoHideDelay={5000}
+          />
           {/* Network Status Indicator */}
           <div className="fixed top-4 right-4 z-40 mt-16">
             <NetworkStatus showDetails={false} />
