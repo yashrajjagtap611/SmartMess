@@ -19,6 +19,7 @@ import {
   ActivitiesSection,
   SubscriptionsSection,
 } from "./components";
+import userService from "@/services/api/userService";
 
 const Profile: React.FC = () => {
   // Debug logging removed - uncomment only when needed for debugging
@@ -230,106 +231,72 @@ const Profile: React.FC = () => {
         token ? "Token exists" : "No token"
       );
 
-      const response = await fetch("/api/user/profile", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      console.log("Profile response status:", response.status);
-      console.log("Profile response ok:", response.ok);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Profile fetch error:", errorText);
-        
-        // If it's an authentication error, create a mock profile for testing
-        if (response.status === 401) {
-          console.log(
-            "Profile component: Authentication error, creating mock profile"
-          );
-          const mockProfileBase = {
-            id: "1",
-            firstName: "Test",
-            lastName: "User",
-            email: "test@example.com",
-            phone: "+91 9876543210",
-            dateOfBirth: "1995-01-01",
-            address: "123 Test Street, Test City, Test State - 123456",
-            college: "Test College",
-            course: "Computer Science",
-            role: "user" as const,
-            isEmailVerified: true,
-            isPhoneVerified: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          
-          // Create mockProfile without avatar initially
-          const mockProfile: UserProfile = {
-            ...mockProfileBase,
-            // avatar will be added conditionally if needed
-          };
-          setProfile(mockProfile);
-          setEditForm(mapProfileToForm(mockProfile));
-          return;
-        }
-        
-        throw new Error(
-          `Failed to fetch profile: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      console.log("Profile data received:", data);
+      const response = await userService.getProfile();
+      console.log("Profile data received:", response);
       
-      if (data.success && data.data) {
+      if (response.success && response.data) {
+        const apiData = response.data as any;
+        
+        // Map API response to component's UserProfile type
         // Ensure at least one status is selected - default to student
         const isStudent =
-          data.data.isStudent === true
+          apiData.isStudent === true
             ? true
-            : data.data.isWorking !== true
-            ? true
-            : false;
-        const isWorking = data.data.isWorking || false;
-
-        const updatedProfile = {
-          ...data.data,
-          isStudent,
-          isWorking,
-        };
-
-        setProfile(updatedProfile);
-        setEditForm(mapProfileToForm(updatedProfile));
-      } else if (data.profile) {
-        // Fallback for different API response structure
-        // Ensure at least one status is selected - default to student
-        const isStudent =
-          data.profile.isStudent === true
-            ? true
-            : data.profile.isWorking !== true
+            : apiData.isWorking !== true
             ? true
             : false;
-        const isWorking = data.profile.isWorking || false;
+        const isWorking = apiData.isWorking || false;
 
-        const updatedProfile = {
-          ...data.profile,
+        const updatedProfile: UserProfile = {
+          id: apiData.id || '',
+          firstName: apiData.firstName || '',
+          lastName: apiData.lastName || '',
+          email: apiData.email || '',
+          phone: apiData.phone || '',
+          role: apiData.role || 'user',
+          avatar: apiData.avatar,
+          dateOfBirth: apiData.dob || apiData.dateOfBirth,
+          gender: apiData.gender,
+          address: apiData.address,
+          college: apiData.college,
+          course: apiData.course,
+          isEmailVerified: apiData.isVerified !== undefined ? apiData.isVerified : (apiData.isEmailVerified || false),
+          isPhoneVerified: apiData.isPhoneVerified || false,
+          createdAt: apiData.createdAt || new Date().toISOString(),
+          updatedAt: apiData.updatedAt || new Date().toISOString(),
           isStudent,
           isWorking,
+          studentInfo: apiData.studentInfo,
+          professionInfo: apiData.professionInfo,
+          messDetails: apiData.messDetails,
+          currentAddress: apiData.currentAddress,
         };
 
         setProfile(updatedProfile);
         setEditForm(mapProfileToForm(updatedProfile));
       } else {
-        console.error("Unexpected profile data structure:", data);
+        console.error("Unexpected profile data structure:", response);
         throw new Error("Invalid profile data structure");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile fetch error:", error);
+      
+      // If it's an authentication error, handle gracefully
+      if (error.response?.status === 401 || error.message?.includes('401')) {
+        console.log(
+          "Profile component: Authentication error"
+        );
+        toast({
+          title: "Authentication Error",
+          description: "Please log in again",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to load profile data",
+        description: error.message || "Failed to load profile data",
         variant: "destructive",
       });
     } finally {
@@ -341,28 +308,37 @@ const Profile: React.FC = () => {
     try {
       const token = localStorage.getItem("authToken");
       if (!token) return;
-      const response = await fetch("/api/user/activity", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const notifications = data.data?.notifications || [];
+      
+      const response = await userService.getActivity();
+      
+      if (response.success && response.data) {
+        const notifications = response.data.activities || [];
         // Map backend notifications to ProfileActivity if needed
-        const mapped = notifications.map((n: any) => ({
-          id: n.id || n._id,
-          title: n.title || n.type || "Activity",
-          description: n.message || "",
-          status: n.status || (n.isRead ? "success" : "pending"),
-          timestamp: n.createdAt,
-        }));
+        const mapped: ProfileActivity[] = notifications.map((n: any) => {
+          // Determine type from notification data
+          let activityType: 'payment' | 'leave' | 'join' | 'update' = 'update';
+          if (n.type) {
+            if (n.type.includes('payment')) activityType = 'payment';
+            else if (n.type.includes('leave')) activityType = 'leave';
+            else if (n.type.includes('join')) activityType = 'join';
+          }
+          
+          return {
+            id: n.id || n._id || String(Date.now()),
+            type: activityType,
+            title: n.title || n.type || "Activity",
+            description: n.description || n.message || "",
+            status: (n.status === 'success' || n.status === 'pending' || n.status === 'failed') 
+              ? n.status 
+              : (n.isRead ? "success" : "pending"),
+            timestamp: n.date || n.createdAt || n.timestamp || new Date().toISOString(),
+          };
+        });
         setActivities(mapped);
       }
     } catch (error) {
       console.error("Failed to fetch profile activities:", error);
+      // Silently fail - activities are not critical
     }
   };
 

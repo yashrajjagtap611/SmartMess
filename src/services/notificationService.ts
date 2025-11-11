@@ -75,10 +75,16 @@ class NotificationService {
         return;
       }
 
-      // Subscribe to push notifications
+      // Subscribe to push notifications only if VAPID key is configured
+      const vapidKey = import.meta.env['VITE_VAPID_PUBLIC_KEY'];
+      if (!vapidKey) {
+        console.log('Notification Service: VAPID public key not configured, skipping push subscription');
+        return;
+      }
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: this.urlBase64ToUint8Array(import.meta.env['VITE_VAPID_PUBLIC_KEY'] || '')
+        applicationServerKey: this.urlBase64ToUint8Array(vapidKey)
       });
 
       this.pushSubscription = {
