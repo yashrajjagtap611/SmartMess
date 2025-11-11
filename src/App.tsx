@@ -4,23 +4,61 @@ import { AuthProvider } from './contexts/AuthContext';
 import { MessProfileProvider } from './contexts/MessProfileContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 
-// Conditional wrapper for MessProfileProvider - only renders when authenticated
+// Conditional wrapper for MessProfileProvider - only renders for mess-owners
 const ConditionalMessProfileProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('authToken'));
+  const [isMessOwner, setIsMessOwner] = useState(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return false;
+    
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'mess-owner') return true;
+    
+    const userInfo = localStorage.getItem('userInfo');
+    if (userInfo) {
+      try {
+        const user = JSON.parse(userInfo);
+        return user.role === 'mess-owner';
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  });
   
   useEffect(() => {
-    const checkAuth = () => {
-      const hasToken = !!localStorage.getItem('authToken');
-      setIsAuthenticated(hasToken);
+    const checkRole = () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsMessOwner(false);
+        return;
+      }
+      
+      const userRole = localStorage.getItem('userRole');
+      if (userRole === 'mess-owner') {
+        setIsMessOwner(true);
+        return;
+      }
+      
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        try {
+          const user = JSON.parse(userInfo);
+          setIsMessOwner(user.role === 'mess-owner');
+        } catch (e) {
+          setIsMessOwner(false);
+        }
+      } else {
+        setIsMessOwner(false);
+      }
     };
     
-    // Check auth on mount
-    checkAuth();
+    // Check role on mount
+    checkRole();
     
-    // Listen for auth changes
+    // Listen for auth/role changes
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'authToken') {
-        checkAuth();
+      if (e.key === 'authToken' || e.key === 'userRole' || e.key === 'userInfo') {
+        checkRole();
       }
     };
     
@@ -28,12 +66,12 @@ const ConditionalMessProfileProvider: React.FC<{ children: React.ReactNode }> = 
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
   
-  // Only render MessProfileProvider when authenticated
-  if (isAuthenticated) {
+  // Only render MessProfileProvider for mess-owners
+  if (isMessOwner) {
     return <MessProfileProvider>{children}</MessProfileProvider>;
   }
   
-  // Return children without MessProfileProvider when not authenticated
+  // Return children without MessProfileProvider for regular users
   return <>{children}</>;
 };
 

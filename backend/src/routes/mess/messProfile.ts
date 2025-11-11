@@ -50,9 +50,19 @@ const generateMealPlansFromDefaults = async (messId: string) => {
   }
 };
 
-// GET /api/mess/profile - Get mess profile for current user
+// GET /api/mess/profile - Get mess profile for current user (mess-owners only)
 router.get('/', requireAuth, async (req: Request, res: Response, _next: NextFunction) => {
     const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    
+    // Only allow mess-owners and admins to access mess profile
+    if (userRole !== 'mess-owner' && userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only mess owners can access mess profile.'
+      });
+    }
+    
     try {
         const messProfile = await MessProfile.findOne({ userId: (req as any).user.id });
     if (!messProfile) {
@@ -72,9 +82,19 @@ router.get('/', requireAuth, async (req: Request, res: Response, _next: NextFunc
   }
 });
 
-// POST /api/mess/profile - Create or upsert mess profile for current user
+// POST /api/mess/profile - Create or upsert mess profile for current user (mess-owners only)
 router.post('/', requireAuth, async (req: Request, res: Response, _next: NextFunction) => {
     const userId = (req as any).user.id;
+    const userRole = (req as any).user.role;
+    
+    // Only allow mess-owners and admins to create/update mess profile
+    if (userRole !== 'mess-owner' && userRole !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Only mess owners can create or update mess profile.'
+      });
+    }
+    
     try {
         const profileData = req.body;
 
