@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router-dom";
+import SettingsScreen from "../SettingsScreen";
 import MealPlan from "./MealPlan";
 import MessProfile from "./MessProfile";
 import OperatingHours from "./OperatingHours/components/OperatingHoursContent";
@@ -8,6 +9,8 @@ import Security from "./Security/components/SecurityContent";
 export default function Settings() {
   return (
     <Routes>
+      {/* Default Settings Screen - shows menu/list of settings */}
+      <Route path="/" element={<SettingsScreen />} />
       <Route path="/mess-plans/*" element={<MealPlan />} />
       <Route path="/mess-profile" element={<MessProfile />} />
       <Route path="/operating-hours" element={<OperatingHours />} />

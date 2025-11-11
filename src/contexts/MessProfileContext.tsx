@@ -361,7 +361,7 @@ export const MessProfileProvider: React.FC<MessProfileProviderProps> = ({ childr
     return () => window.removeEventListener('storage', handleUserInfoChange);
   }, [isInitialized]);
 
-  // Initialize data on component mount
+  // Initialize data on component mount - ONLY for mess-owners
   useEffect(() => {
     // Reset flags on mount
     hasLoadedProfile.current = false;
@@ -377,6 +377,31 @@ export const MessProfileProvider: React.FC<MessProfileProviderProps> = ({ childr
         setIsInitialized(true);
         return;
       }
+      
+      // Check user role - only load mess profile for mess-owners
+      const userRole = localStorage.getItem('userRole');
+      const userInfo = localStorage.getItem('userInfo');
+      
+      let isMessOwner = false;
+      if (userRole === 'mess-owner') {
+        isMessOwner = true;
+      } else if (userInfo) {
+        try {
+          const user = JSON.parse(userInfo);
+          isMessOwner = user.role === 'mess-owner';
+        } catch (e) {
+          // Invalid JSON, skip
+        }
+      }
+      
+      // Only initialize mess profile for mess-owners
+      if (!isMessOwner) {
+        console.log('User is not a mess-owner, skipping mess profile initialization');
+        setIsInitialized(true);
+        return;
+      }
+      
+      console.log('User is mess-owner, loading mess profile...');
       
       // Load photo first
       if (!hasLoadedPhoto.current) {
