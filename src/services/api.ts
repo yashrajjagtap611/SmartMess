@@ -89,11 +89,17 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error: any) => {
-    // Import error handler dynamically to avoid circular dependencies
-    import('@/utils/errorHandler').then(({ ErrorHandler }) => {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError, `API Request to ${error.config?.url}`);
-    });
+    // Don't log 404 errors for expected endpoints (like mess profile when user doesn't have one)
+    const url = error.config?.url || '';
+    const isExpected404 = url.includes('/mess/profile') && error.response?.status === 404;
+    
+    if (!isExpected404) {
+      // Import error handler dynamically to avoid circular dependencies
+      import('@/utils/errorHandler').then(({ ErrorHandler }) => {
+        const appError = ErrorHandler.handleApiError(error);
+        ErrorHandler.logError(appError, `API Request to ${url}`);
+      });
+    }
     
     // For offline scenarios, don't automatically logout
     return Promise.reject(error);
