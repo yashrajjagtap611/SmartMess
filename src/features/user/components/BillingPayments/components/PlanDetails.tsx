@@ -151,17 +151,17 @@ const PlanDetails: React.FC<PlanDetailsProps> = ({
     calculatePricing();
   }, [calculatePricing]);
 
-  // Debug logging
-  console.log('PlanDetails Debug:', {
-    selectedPlan,
-    plans: plans.length,
-    currentPlan: currentPlan?.name,
-    pricing: pricing ? 'calculated' : 'null',
-    calculationLoading,
-    calculationError,
-    totalApprovedLeaves: approvedLeaves.length,
-    processedLeaves: pricing?.processedLeaves?.length || 0
-  });
+  // Debug logging removed - uncomment only when needed for debugging
+  // console.log('PlanDetails Debug:', {
+  //   selectedPlan,
+  //   plans: plans.length,
+  //   currentPlan: currentPlan?.name,
+  //   pricing: pricing ? 'calculated' : 'null',
+  //   calculationLoading,
+  //   calculationError,
+  //   totalApprovedLeaves: approvedLeaves.length,
+  //   processedLeaves: pricing?.processedLeaves?.length || 0
+  // });
 
   // Show message if no plans available
   if (plans.length === 0) {

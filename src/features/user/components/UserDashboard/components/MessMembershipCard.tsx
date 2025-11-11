@@ -29,15 +29,15 @@ const MessMembershipCard: React.FC<MessMembershipCardProps> = ({
   onResendRequest,
   loading = false
 }) => {
-  // Debug logging to see what data we're receiving
-  console.log('🔍 MessMembershipCard Debug:', {
-    messId: mess.messId,
-    messName: mess.messName,
-    status: mess.status,
-    paymentStatus: mess.paymentStatus,
-    canLeave: mess.canLeave,
-    mealPlans: mess.mealPlans?.length || 0
-  });
+  // Debug logging removed - uncomment only when needed for debugging
+  // console.log('🔍 MessMembershipCard Debug:', {
+  //   messId: mess.messId,
+  //   messName: mess.messName,
+  //   status: mess.status,
+  //   paymentStatus: mess.paymentStatus,
+  //   canLeave: mess.canLeave,
+  //   mealPlans: mess.mealPlans?.length || 0
+  // });
 
   const getStatusColor = (status: string) => {
     switch (status) {

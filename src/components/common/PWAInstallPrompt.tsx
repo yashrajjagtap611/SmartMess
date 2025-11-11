@@ -37,6 +37,9 @@ export default function PWAInstallPrompt({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    let installPromptEvent: BeforeInstallPromptEvent | null = null;
+
     // Check if app is already installed
     const checkInstallation = () => {
       // Check localStorage first
@@ -49,71 +52,137 @@ export default function PWAInstallPrompt({
         if (installed) {
           localStorage.setItem(PWA_INSTALLED_KEY, 'true');
         }
+        return true;
       } else {
         setIsInstalled(false);
+        return false;
       }
     };
 
-    // Listen for beforeinstallprompt event
+    // Listen for beforeinstallprompt event (Chrome/Edge)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      installPromptEvent = e as BeforeInstallPromptEvent;
+      setDeferredPrompt(installPromptEvent);
       setIsInstallable(true);
       
-      // Always show if not installed (ignore dismissed state - show every time)
-      if (autoShow && !isInstalled) {
-        setShowPrompt(true);
-        // Trigger slide-in animation after a small delay
-        setTimeout(() => setIsVisible(true), 100);
-      }
+      console.log('PWA: beforeinstallprompt event received');
+      
+      // Wait for service worker to be ready before showing prompt
+      waitForServiceWorker().then(() => {
+        if (mounted && autoShow && !isInstalled) {
+          setShowPrompt(true);
+          setTimeout(() => setIsVisible(true), 100);
+        }
+      });
     };
 
     // Listen for appinstalled event
     const handleAppInstalled = () => {
+      console.log('PWA: App installed successfully');
       setIsInstalled(true);
       setIsInstallable(false);
       setShowPrompt(false);
       setIsVisible(false);
       setDeferredPrompt(null);
+      installPromptEvent = null;
       localStorage.setItem(PWA_INSTALLED_KEY, 'true');
     };
 
-    checkInstallation();
+    // Wait for service worker to be ready
+    const waitForServiceWorker = async (): Promise<boolean> => {
+      if (!('serviceWorker' in navigator)) {
+        console.log('PWA: Service worker not supported');
+        return false;
+      }
 
-    // Check if installable on mount (for cases where event already fired or as fallback)
-    // Show prompt if service worker is registered and app is not installed
-    if (!isInstalled && 'serviceWorker' in navigator) {
-      // Small delay to ensure service worker is ready
-      const checkServiceWorker = async () => {
-        try {
-          const registration = await navigator.serviceWorker.ready;
-          if (registration && !isInstalled) {
-            // If we have a service worker, consider it installable
-            // The beforeinstallprompt event will provide the actual install capability
-            setIsInstallable(true);
-            if (autoShow) {
-              setShowPrompt(true);
-              setTimeout(() => setIsVisible(true), 100);
-            }
-          }
-        } catch (error) {
-          console.log('Service worker not ready yet');
+      try {
+        // Check if service worker is already active
+        if (navigator.serviceWorker.controller) {
+          console.log('PWA: Service worker already active');
+          return true;
         }
-      };
-      
-      // Check immediately and also after a delay
-      checkServiceWorker();
-      setTimeout(checkServiceWorker, 1500);
+
+        // Wait for service worker to be ready (with shorter timeout for mobile)
+        const registration = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise<ServiceWorkerRegistration>((_, reject) => 
+            setTimeout(() => reject(new Error('Service worker timeout')), 3000)
+          )
+        ]);
+
+        if (registration && mounted) {
+          console.log('PWA: Service worker ready');
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.warn('PWA: Service worker not ready:', error);
+        // Still allow install prompt even if service worker takes time
+        // Some browsers might not have service worker but still support PWA install
+        return true;
+      }
+    };
+
+    // Check installation status
+    const isAlreadyInstalled = checkInstallation();
+    
+    if (isAlreadyInstalled) {
+      return;
     }
 
+    // For mobile browsers, wait a bit longer and check service worker
+    const initializePWA = async () => {
+      // Wait for service worker to be ready (with shorter timeout for mobile)
+      const swReady = await waitForServiceWorker();
+      
+      // Check if we have deferred prompt or if we should show prompt anyway
+      if (mounted && !isInstalled) {
+        // If we have a deferred prompt, show it immediately
+        if (installPromptEvent || deferredPrompt) {
+          setIsInstallable(true);
+          if (autoShow) {
+            setShowPrompt(true);
+            setTimeout(() => setIsVisible(true), 200);
+          }
+        } else if (swReady) {
+          // Service worker is ready but no prompt yet - show install button anyway
+          // This helps on mobile where beforeinstallprompt might be delayed
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isMobile && autoShow) {
+            // On mobile, show prompt after shorter delay if service worker is ready
+            setTimeout(() => {
+              if (mounted && !isInstalled && !installPromptEvent) {
+                setIsInstallable(true);
+                setShowPrompt(true);
+                setTimeout(() => setIsVisible(true), 200);
+              }
+            }, 1000); // 1 second delay for mobile
+          } else if (autoShow) {
+            // Desktop - show after service worker is ready
+            setIsInstallable(true);
+            setShowPrompt(true);
+            setTimeout(() => setIsVisible(true), 200);
+          }
+        }
+      }
+    };
+
+    // Initialize after a short delay to ensure page is loaded
+    const initTimeout = setTimeout(initializePWA, 300);
+
+    // Listen for install prompt events
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      mounted = false;
+      clearTimeout(initTimeout);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [autoShow, isInstalled]);
+  }, [autoShow, isInstalled, deferredPrompt]);
 
   // Auto-hide after delay
   useEffect(() => {
@@ -129,11 +198,34 @@ export default function PWAInstallPrompt({
   }, [showPrompt, isVisible, autoHideDelay, variant]);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      // Fallback for mobile browsers that might not have deferredPrompt
+      // Try to trigger native install prompt
+      console.log('PWA: No deferred prompt, checking if installable...');
+      
+      // Check if we can show install instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        // iOS Safari - show instructions
+        alert('To install this app:\n1. Tap the Share button\n2. Tap "Add to Home Screen"');
+        return;
+      } else if (isAndroid && !deferredPrompt) {
+        // Android - might need to wait a bit more
+        console.log('PWA: Waiting for install prompt on Android...');
+        setIsInstalling(false);
+        return;
+      }
+      
+      return;
+    }
 
     setIsInstalling(true);
     
     try {
+      console.log('PWA: Showing install prompt...');
+      
       // Show the install prompt
       await deferredPrompt.prompt();
 
@@ -153,9 +245,11 @@ export default function PWAInstallPrompt({
       }
     } catch (error) {
       console.error('PWA: Error during install:', error);
+      // On error, don't keep the button disabled
     } finally {
       setIsInstalling(false);
-      setDeferredPrompt(null);
+      // Don't clear deferredPrompt immediately - might be needed again
+      // setDeferredPrompt(null);
     }
   };
 

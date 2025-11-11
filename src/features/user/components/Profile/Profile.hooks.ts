@@ -21,6 +21,44 @@ export const useProfile = () => {
     course: ''
   });
 
+  // Helper function to set fallback profile
+  const setFallbackProfile = (user: any) => {
+    const fallbackProfileBase: UserProfile = {
+      id: user.id,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      dateOfBirth: user.dateOfBirth || '',
+      address: user.address || '',
+      college: user.college || '',
+      course: user.course || '',
+      role: user.role,
+      isEmailVerified: user.isEmailVerified || false,
+      isPhoneVerified: user.isPhoneVerified || false,
+      createdAt: user.createdAt || new Date().toISOString(),
+      updatedAt: user.updatedAt || new Date().toISOString()
+    };
+    
+    // Conditionally add avatar if it exists
+    let fallbackProfile: UserProfile = fallbackProfileBase;
+    if (user.avatar) {
+      fallbackProfile = { ...fallbackProfile, avatar: user.avatar };
+    }
+    
+    setProfile(fallbackProfile);
+    setFormData({
+      firstName: fallbackProfile.firstName || '',
+      lastName: fallbackProfile.lastName || '',
+      email: fallbackProfile.email || '',
+      phone: fallbackProfile.phone || '',
+      dateOfBirth: fallbackProfile.dateOfBirth || '',
+      address: fallbackProfile.address || '',
+      college: fallbackProfile.college || '',
+      course: fallbackProfile.course || ''
+    });
+  };
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -29,34 +67,66 @@ export const useProfile = () => {
     try {
       setLoading(true);
       const user = authService.getCurrentUser();
-      if (user) {
-        // Load additional profile data from API if needed
+      
+      if (!user) {
+        console.warn('No user found in auth service');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Loading profile for user:', user.id);
+      
+      // Load additional profile data from API
+      try {
         const response = await userService.getProfile();
+        console.log('Profile API response:', response);
+        
         if (response.success && response.data) {
           // Transform the API response to match our UserProfile type
-          const transformedProfileBase = {
-            id: response.data.id,
-            firstName: response.data.firstName || '',
-            lastName: response.data.lastName || '',
-            email: response.data.email || '',
-            phone: response.data.phone || '',
-            dateOfBirth: response.data.dob || '',
-            address: response.data.address || '',
-            college: '', // Not provided by userService
-            course: '', // Not provided by userService
-            role: response.data.role,
-            isEmailVerified: true, // Assume verified since user is logged in
-            isPhoneVerified: false, // Default to false
-            createdAt: response.data.createdAt,
-            updatedAt: response.data.updatedAt
+          const userData: any = user;
+          
+          // Build profile object with required fields
+          const profileData: any = {
+            id: response.data.id || user.id,
+            firstName: response.data.firstName || user.firstName || '',
+            lastName: response.data.lastName || user.lastName || '',
+            email: response.data.email || user.email || '',
+            phone: response.data.phone || user.phone || '',
+            role: response.data.role || user.role,
+            isEmailVerified: response.data.isVerified !== undefined ? response.data.isVerified : (userData?.isEmailVerified || false),
+            isPhoneVerified: userData?.isPhoneVerified || false,
+            createdAt: response.data.createdAt || userData?.createdAt || new Date().toISOString(),
+            updatedAt: response.data.updatedAt || userData?.updatedAt || new Date().toISOString()
           };
           
-          // Conditionally add avatar and messDetails if they exist
-          let transformedProfile: UserProfile = transformedProfileBase;
+          // Add optional properties only if they have values
+          // Extract dateOfBirth from userData using type-safe approach
+          const userDob = userData ? (userData as any).dateOfBirth : undefined;
+          // response.data has 'dob' field from API, not 'dateOfBirth'
+          const apiDob = (response.data as any).dob || (response.data as any).dateOfBirth;
+          const dobValue = apiDob || userDob;
+          if (dobValue) {
+            profileData.dateOfBirth = dobValue;
+          }
+          const addrValue = response.data.address || (userData && userData.address);
+          if (addrValue) {
+            profileData.address = addrValue;
+          }
+          if (userData && userData.college) {
+            profileData.college = userData.college;
+          }
+          if (userData && userData.course) {
+            profileData.course = userData.course;
+          }
           if (response.data.avatar) {
-            transformedProfile = { ...transformedProfile, avatar: response.data.avatar };
+            profileData.avatar = response.data.avatar;
+          } else if (userData && userData.avatar) {
+            profileData.avatar = userData.avatar;
           }
           
+          const transformedProfile: UserProfile = profileData;
+          
+          console.log('Setting profile:', transformedProfile);
           setProfile(transformedProfile);
           setFormData({
             firstName: transformedProfile.firstName || '',
@@ -69,45 +139,23 @@ export const useProfile = () => {
             course: transformedProfile.course || ''
           });
         } else {
+          console.warn('Profile API response not successful, using fallback:', response);
           // Fallback to current user data
-          const fallbackProfileBase = {
-            id: user.id,
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.email || '',
-            phone: user.phone || '',
-            dateOfBirth: user.dateOfBirth || '',
-            address: user.address || '',
-            college: user.college || '',
-            course: user.course || '',
-            role: user.role,
-            isEmailVerified: user.isEmailVerified || false,
-            isPhoneVerified: user.isPhoneVerified || false,
-            createdAt: user.createdAt || new Date().toISOString(),
-            updatedAt: user.updatedAt || new Date().toISOString()
-          };
-          
-          // Conditionally add avatar if it exists
-          let fallbackProfile: UserProfile = fallbackProfileBase;
-          if (user.avatar) {
-            fallbackProfile = { ...fallbackProfile, avatar: user.avatar };
-          }
-          
-          setProfile(fallbackProfile);
-          setFormData({
-            firstName: fallbackProfile.firstName || '',
-            lastName: fallbackProfile.lastName || '',
-            email: fallbackProfile.email || '',
-            phone: fallbackProfile.phone || '',
-            dateOfBirth: fallbackProfile.dateOfBirth || '',
-            address: fallbackProfile.address || '',
-            college: fallbackProfile.college || '',
-            course: fallbackProfile.course || ''
-          });
+          setFallbackProfile(user);
         }
+      } catch (apiError: any) {
+        console.error('Error fetching profile from API:', apiError);
+        // Fallback to current user data if API fails
+        console.log('Using fallback profile data from auth service');
+        setFallbackProfile(user);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading profile:', error);
+      // Try to use fallback data
+      const user = authService.getCurrentUser();
+      if (user) {
+        setFallbackProfile(user);
+      }
     } finally {
       setLoading(false);
     }

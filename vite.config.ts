@@ -39,7 +39,13 @@ export default defineConfig({
       protocol: 'ws',
       overlay: true,
       // Limit HMR connections to prevent memory exhaustion
-      clientPort: 5174
+      clientPort: 5174,
+      // Fix WebSocket connection issues
+      client: {
+        protocol: 'ws',
+        hostname: 'localhost',
+        port: 5174
+      }
     },
     // Add resource limits and connection management
     fs: {

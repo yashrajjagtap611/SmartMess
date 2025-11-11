@@ -21,7 +21,8 @@ import {
 } from "./components";
 
 const Profile: React.FC = () => {
-  console.log("Profile component: Rendering");
+  // Debug logging removed - uncomment only when needed for debugging
+  // console.log("Profile component: Rendering");
   const { toast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [activities, setActivities] = useState<ProfileActivity[]>([]);

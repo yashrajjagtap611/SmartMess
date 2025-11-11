@@ -52,7 +52,8 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('authToken');
     if (token) {
       // Type assertion for headers - InternalAxiosRequestConfig has headers
-      (config.headers as Record<string, any>).Authorization = `Bearer ${token}`;
+      // Use bracket notation for index signature properties
+      (config.headers as Record<string, any>)['Authorization'] = `Bearer ${token}`;
     }
     
     // Add request timestamp for debugging

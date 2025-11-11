@@ -101,21 +101,22 @@ const TodaysMenu: React.FC<TodaysMenuProps> = ({ className = '' }) => {
 
   const getCurrentMealType = () => {
     const hour = currentTime.getHours();
-    console.log('🕐 Current time:', currentTime.toLocaleTimeString(), 'Hour:', hour);
+    // Removed excessive console logs - only log in development if needed
+    // console.log('🕐 Current time:', currentTime.toLocaleTimeString(), 'Hour:', hour);
     
     if (hour >= 6 && hour < 11) {
-      console.log('🍳 Breakfast time detected');
+      // console.log('🍳 Breakfast time detected');
       return 'breakfast';
     }
     if (hour >= 11 && hour < 16) {
-      console.log('🍽️ Lunch time detected');
+      // console.log('🍽️ Lunch time detected');
       return 'lunch';
     }
     if (hour >= 16 && hour < 22) {
-      console.log('🌙 Dinner time detected');
+      // console.log('🌙 Dinner time detected');
       return 'dinner';
     }
-    console.log('❌ No meal time detected');
+    // console.log('❌ No meal time detected');
     return null;
   };
 
