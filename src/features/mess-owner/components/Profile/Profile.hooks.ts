@@ -19,6 +19,7 @@ import {
 import { type PlatformCharge } from '@/components/common/PlatformChargesSection';
 import userService from '@/services/api/userService';
 import { messAPI } from '@/services/api';
+import apiClient from '@/services/api';
 
 type UserProfileData = {
   id: string;
@@ -278,36 +279,29 @@ export const useMessOwnerProfile = () => {
   const fetchPlatformCharges = useCallback(async () => {
     try {
       setIsLoadingPlatformCharges(true);
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No authentication token found');
+      
+      // Use API client instead of raw fetch
+      const response = await apiClient.get('/mess-owner/platform-charges');
+      
+      if (response.data.success && response.data.data) {
+        setPlatformCharges(response.data.data);
       }
-
-      const response = await fetch('/api/mess-owner/platform-charges', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setPlatformCharges(data.data);
-        }
-      } else if (response.status === 401) {
+    } catch (error: any) {
+      if (error.response?.status === 401) {
         console.warn('Authentication error fetching platform charges.');
         setPlatformCharges([]);
+      } else if (error.response?.status === 404) {
+        // Endpoint might not exist yet, set empty array
+        console.warn('Platform charges endpoint not found (404).');
+        setPlatformCharges([]);
       } else {
-        throw new Error(`Failed to fetch platform charges: ${response.statusText}`);
+        console.error('Error fetching platform charges:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load platform charges',
+          variant: 'destructive',
+        });
       }
-    } catch (error) {
-      console.error('Error fetching platform charges:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load platform charges',
-        variant: 'destructive',
-      });
     } finally {
       setIsLoadingPlatformCharges(false);
     }
@@ -351,20 +345,9 @@ export const useMessOwnerProfile = () => {
           status: formData.status,
         };
 
-        const response = await fetch('/api/user/profile', {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to update profile: ${response.statusText}`);
-        }
-
-        const data: UserProfileApiResponse = await response.json();
+        // Use API client instead of raw fetch
+        const response = await apiClient.put('/user/profile', payload);
+        const data: UserProfileApiResponse = response.data;
         const updatedUser = normaliseUserProfile(data.data);
 
         setUserProfile(updatedUser);
@@ -436,20 +419,11 @@ export const useMessOwnerProfile = () => {
           types: sanitiseMessTypes(formData.types),
         };
 
-        const response = await fetch('/api/mess/profile', {
-          method: hasMessProfile ? 'PUT' : 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to save mess profile: ${response.statusText}`);
-        }
-
-        const data: MessProfileApiResponse = await response.json();
+        // Use API client instead of raw fetch
+        const response = hasMessProfile
+          ? await apiClient.put('/mess/profile', payload)
+          : await apiClient.post('/mess/profile', payload);
+        const data: MessProfileApiResponse = response.data;
         const updatedMess = normaliseMessProfile(data.data);
 
         setMessProfile(updatedMess);
@@ -491,20 +465,20 @@ export const useMessOwnerProfile = () => {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        const response = await fetch('/api/user/profile/avatar', {
-          method: 'POST',
+        // Use API client instead of raw fetch
+        const response = await apiClient.post('/user/profile/avatar', formData, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
           },
-          body: formData,
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to upload avatar: ${response.statusText}`);
+        // Axios automatically throws on non-2xx status, so if we get here, it's successful
+        if (!response.data || !response.data.success) {
+          throw new Error(response.data?.message || 'Failed to upload avatar');
         }
 
-        const data = await response.json();
-        const avatarUrl: string | undefined = data?.data?.avatar;
+        // Axios response data is already parsed
+        const avatarUrl: string | undefined = response.data?.data?.avatar;
 
         if (avatarUrl) {
           setUserProfile((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
@@ -516,7 +490,7 @@ export const useMessOwnerProfile = () => {
           return true;
         }
 
-        throw new Error(data?.message || 'Failed to upload profile picture');
+        throw new Error(response.data?.message || 'Failed to upload profile picture');
       } catch (error) {
         console.error('Error uploading avatar:', error);
         toast({

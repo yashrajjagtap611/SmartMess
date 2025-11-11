@@ -26,6 +26,7 @@ if (rawApiUrl.startsWith('http')) {
 
 // Debug log in development and production (to help troubleshoot)
 // This runs immediately when the module is imported
+// Use multiple console methods to ensure visibility
 if (import.meta.env.DEV) {
   console.log('🔧 API Base URL configured (DEV):', {
     envValue: envValue || '(not set)',
@@ -35,13 +36,14 @@ if (import.meta.env.DEV) {
 } else {
   // Production log - ALWAYS show to help debug
   // Use styled console logs for better visibility
-  console.log(
+  // Also use console.warn to ensure it's not filtered
+  console.warn(
     '%c🌐 API Configuration (Production)',
     'font-size: 16px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 4px 8px; border-radius: 4px;'
   );
-  console.log('Environment Variable Value:', envValue || '(NOT SET - using default /api)');
-  console.log('Raw API URL:', rawApiUrl);
-  console.log('Normalized API URL:', API_BASE_URL);
+  console.warn('Environment Variable Value:', envValue || '(NOT SET - using default /api)');
+  console.warn('Raw API URL:', rawApiUrl);
+  console.warn('Normalized API URL:', API_BASE_URL);
   
   if (!rawApiUrl.startsWith('http')) {
     console.error(
@@ -61,12 +63,12 @@ if (import.meta.env.DEV) {
     console.error('⚠️ API calls will go to:', window.location.origin + API_BASE_URL);
     console.error('⚠️ They should go to: https://smartmessserver.onrender.com/api');
   } else {
-    console.log(
+    console.warn(
       '%c✅ API Base URL configured correctly:',
       'font-size: 14px; font-weight: bold; color: #ffffff; background: #10b981; padding: 4px 8px; border-radius: 4px;',
       API_BASE_URL
     );
-    console.log(
+    console.warn(
       '%c✅ API calls will go to:',
       'font-size: 14px; font-weight: bold; color: #ffffff; background: #10b981; padding: 4px 8px; border-radius: 4px;',
       API_BASE_URL
@@ -137,11 +139,11 @@ apiClient.interceptors.response.use(
     const isExpected404 = url.includes('/mess/profile') && error.response?.status === 404;
     
     if (!isExpected404) {
-      // Import error handler dynamically to avoid circular dependencies
-      import('@/utils/errorHandler').then(({ ErrorHandler }) => {
-        const appError = ErrorHandler.handleApiError(error);
+    // Import error handler dynamically to avoid circular dependencies
+    import('@/utils/errorHandler').then(({ ErrorHandler }) => {
+      const appError = ErrorHandler.handleApiError(error);
         ErrorHandler.logError(appError, `API Request to ${url}`);
-      });
+    });
     }
     
     // For offline scenarios, don't automatically logout
