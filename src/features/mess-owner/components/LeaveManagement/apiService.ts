@@ -1,17 +1,17 @@
 // Centralized API service for LeaveManagement
 import { useAuth } from './useAuth';
+import apiClient from '@/services/api';
 
 export class LeaveManagementAPI {
-  private baseURL = '/api/mess';
   private auth: ReturnType<typeof useAuth>;
 
   constructor() {
     this.auth = useAuth();
   }
 
-  private async makeRequest(endpoint: string, options: RequestInit = {}) {
+  private async makeRequest(endpoint: string, options: { method?: string; body?: any } = {}) {
     try {
-      const { checkMessOwnerRole, getAuthHeaders } = this.auth;
+      const { checkMessOwnerRole } = this.auth;
       
       // Check authentication
       const authCheck = checkMessOwnerRole();
@@ -19,37 +19,41 @@ export class LeaveManagementAPI {
         throw new Error(authCheck.error || 'Authentication failed');
       }
 
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        ...options,
-        headers: {
-          ...getAuthHeaders(),
-          ...options.headers
-        }
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication required. Please login again.');
-        }
-        if (response.status === 403) {
-          throw new Error('Access denied. This feature is only available for mess owners.');
-        }
-        if (response.status === 500) {
-          throw new Error('Server error. Please try again later.');
-        }
-        
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      // Use API client instead of raw fetch
+      const method = options.method || 'GET';
+      let response;
+      
+      if (method === 'GET') {
+        response = await apiClient.get(endpoint);
+      } else if (method === 'POST') {
+        response = await apiClient.post(endpoint, options.body);
+      } else if (method === 'PUT') {
+        response = await apiClient.put(endpoint, options.body);
+      } else if (method === 'DELETE') {
+        response = await apiClient.delete(endpoint);
+      } else {
+        throw new Error(`Unsupported HTTP method: ${method}`);
       }
 
-      return response.json();
-    } catch (error) {
+      return response.data;
+    } catch (error: any) {
       console.error('API request failed:', error);
-      throw error;
+      
+      if (error.response?.status === 401) {
+        throw new Error('Authentication required. Please login again.');
+      }
+      if (error.response?.status === 403) {
+        throw new Error('Access denied. This feature is only available for mess owners.');
+      }
+      if (error.response?.status === 500) {
+        throw new Error('Server error. Please try again later.');
+      }
+      
+      throw new Error(error.response?.data?.message || error.message || `HTTP error! status: ${error.response?.status || 'unknown'}`);
     }
   }
 
-  // Leave Requests API
+  // Leave Requests API - endpoints are relative to /api/mess
   async getLeaveRequests(page = 1, filters?: any, limit?: number) {
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -66,32 +70,32 @@ export class LeaveManagementAPI {
       queryParams.append('search', filters.search);
     }
 
-    return this.makeRequest(`/leave-requests?${queryParams}`);
+    return this.makeRequest(`/mess/leave-requests?${queryParams}`);
   }
 
   async getLeaveStats() {
-    return this.makeRequest('/leave-requests/stats');
+    return this.makeRequest('/mess/leave-requests/stats');
   }
 
   async getLeaveRequestById(id: string) {
-    return this.makeRequest(`/leave-requests/${id}`);
+    return this.makeRequest(`/mess/leave-requests/${id}`);
   }
 
   async processLeaveRequest(requestId: string, action: any) {
-    return this.makeRequest(`/leave-requests/${requestId}/action`, {
+    return this.makeRequest(`/mess/leave-requests/${requestId}/action`, {
       method: 'POST',
-      body: JSON.stringify(action)
+      body: action
     });
   }
 
   async processExtensionRequest(requestId: string, extensionId: string, action: any) {
-    return this.makeRequest(`/leave-requests/${requestId}/extension/${extensionId}/action`, {
+    return this.makeRequest(`/mess/leave-requests/${requestId}/extension/${extensionId}/action`, {
       method: 'POST',
-      body: JSON.stringify(action)
+      body: action
     });
   }
 
-  // Mess Off Days API
+  // Mess Off Days API - endpoints are relative to /api/mess
   async getMessOffDays(page = 1, filters?: any) {
     const queryParams = new URLSearchParams({
       page: page.toString(),
@@ -102,59 +106,51 @@ export class LeaveManagementAPI {
       queryParams.append('dateFilter', filters.dateFilter);
     }
 
-    return this.makeRequest(`/off-days?${queryParams}`);
+    return this.makeRequest(`/mess/off-days?${queryParams}`);
   }
 
   async getMessOffDayStats() {
-    return this.makeRequest('/off-days/stats');
+    return this.makeRequest('/mess/off-days/stats');
   }
 
   async createMessOffDay(formData: any) {
-    return this.makeRequest('/off-days', {
+    return this.makeRequest('/mess/off-days', {
       method: 'POST',
-      body: JSON.stringify(formData)
+      body: formData
     });
   }
 
   async updateMessOffDay(requestId: string, data: any) {
-    return this.makeRequest(`/off-days/${requestId}`, {
+    return this.makeRequest(`/mess/off-days/${requestId}`, {
       method: 'PUT',
-      body: JSON.stringify(data)
+      body: data
     });
   }
 
   async deleteMessOffDay(requestId: string, announcementData?: { sendAnnouncement?: boolean; announcementMessage?: string }) {
-    const options: RequestInit = {
-      method: 'DELETE'
-    };
-    
-    if (announcementData) {
-      options.body = JSON.stringify(announcementData);
-      options.headers = {
-        'Content-Type': 'application/json'
-      };
-    }
-    
-    return this.makeRequest(`/off-days/${requestId}`, options);
+    return this.makeRequest(`/mess/off-days/${requestId}`, {
+      method: 'DELETE',
+      body: announcementData
+    });
   }
 
   async getMessOffDayById(requestId: string) {
-    return this.makeRequest(`/off-days/${requestId}`);
+    return this.makeRequest(`/mess/off-days/${requestId}`);
   }
 
   async getMessOffDayHistory(requestId: string) {
-    return this.makeRequest(`/off-days/${requestId}/history`);
+    return this.makeRequest(`/mess/off-days/${requestId}/history`);
   }
 
-  // Default Off Day Settings API
+  // Default Off Day Settings API - endpoints are relative to /api/mess
   async getDefaultOffDaySettings() {
-    return this.makeRequest('/off-day-settings');
+    return this.makeRequest('/mess/off-day-settings');
   }
 
   async saveDefaultOffDaySettings(settings: any) {
-    return this.makeRequest('/off-day-settings', {
+    return this.makeRequest('/mess/off-day-settings', {
       method: 'POST',
-      body: JSON.stringify(settings)
+      body: settings
     });
   }
 }

@@ -25,6 +25,7 @@ if (rawApiUrl.startsWith('http')) {
 }
 
 // Debug log in development and production (to help troubleshoot)
+// This runs immediately when the module is imported
 if (import.meta.env.DEV) {
   console.log('🔧 API Base URL configured (DEV):', {
     envValue: envValue || '(not set)',
@@ -33,13 +34,20 @@ if (import.meta.env.DEV) {
   });
 } else {
   // Production log - ALWAYS show to help debug
-  console.group('🌐 API Configuration (Production)');
+  // Use styled console logs for better visibility
+  console.log(
+    '%c🌐 API Configuration (Production)',
+    'font-size: 16px; font-weight: bold; color: #3b82f6; background: #eff6ff; padding: 4px 8px; border-radius: 4px;'
+  );
   console.log('Environment Variable Value:', envValue || '(NOT SET - using default /api)');
   console.log('Raw API URL:', rawApiUrl);
   console.log('Normalized API URL:', API_BASE_URL);
   
   if (!rawApiUrl.startsWith('http')) {
-    console.error('❌ PROBLEM DETECTED: VITE_API_BASE_URL is not set correctly!');
+    console.error(
+      '%c❌ PROBLEM DETECTED: VITE_API_BASE_URL is not set correctly!',
+      'font-size: 14px; font-weight: bold; color: #ffffff; background: #ef4444; padding: 4px 8px; border-radius: 4px;'
+    );
     console.error('Current value:', envValue || '(undefined)');
     console.error('Expected value: https://smartmessserver.onrender.com/api');
     console.error('');
@@ -53,10 +61,17 @@ if (import.meta.env.DEV) {
     console.error('⚠️ API calls will go to:', window.location.origin + API_BASE_URL);
     console.error('⚠️ They should go to: https://smartmessserver.onrender.com/api');
   } else {
-    console.log('✅ API Base URL configured correctly:', API_BASE_URL);
-    console.log('✅ API calls will go to:', API_BASE_URL);
+    console.log(
+      '%c✅ API Base URL configured correctly:',
+      'font-size: 14px; font-weight: bold; color: #ffffff; background: #10b981; padding: 4px 8px; border-radius: 4px;',
+      API_BASE_URL
+    );
+    console.log(
+      '%c✅ API calls will go to:',
+      'font-size: 14px; font-weight: bold; color: #ffffff; background: #10b981; padding: 4px 8px; border-radius: 4px;',
+      API_BASE_URL
+    );
   }
-  console.groupEnd();
 }
 
 const API_TIMEOUT = 30000; // 30 seconds for better reliability
