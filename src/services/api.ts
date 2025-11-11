@@ -23,12 +23,23 @@ if (rawApiUrl.startsWith('http')) {
   API_BASE_URL = rawApiUrl.replace(/\/+$/, '');
 }
 
-// Debug log in development
+// Debug log in development and production (to help troubleshoot)
 if (import.meta.env.DEV) {
   console.log('API Base URL configured:', {
     raw: rawApiUrl,
     normalized: API_BASE_URL
   });
+} else {
+  // Production log - helps debug if VITE_API_BASE_URL is not set
+  if (!rawApiUrl.startsWith('http')) {
+    console.warn('⚠️ VITE_API_BASE_URL is not set correctly in production!', {
+      raw: rawApiUrl,
+      normalized: API_BASE_URL,
+      message: 'API calls will fail. Set VITE_API_BASE_URL=https://smartmessserver.onrender.com/api in Vercel environment variables.'
+    });
+  } else {
+    console.log('✅ API Base URL configured for production:', API_BASE_URL);
+  }
 }
 
 const API_TIMEOUT = 30000; // 30 seconds for better reliability

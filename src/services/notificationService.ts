@@ -53,19 +53,46 @@ class NotificationService {
 
   private async setupPushSubscription(): Promise<void> {
     try {
+      // Check VAPID key first before doing anything
+      const vapidKey = import.meta.env['VITE_VAPID_PUBLIC_KEY'];
+      if (!vapidKey || vapidKey.trim() === '') {
+        console.log('Notification Service: VAPID public key not configured, skipping push subscription');
+        return;
+      }
+
       const registration = await navigator.serviceWorker.ready;
       const existingSubscription = await registration.pushManager.getSubscription();
       
       if (existingSubscription) {
-        this.pushSubscription = {
-          endpoint: existingSubscription.endpoint,
-          keys: {
-            p256dh: btoa(String.fromCharCode(...new Uint8Array(existingSubscription.getKey('p256dh')!))),
-            auth: btoa(String.fromCharCode(...new Uint8Array(existingSubscription.getKey('auth')!)))
+        // Check if existing subscription is valid (has keys)
+        try {
+          const p256dh = existingSubscription.getKey('p256dh');
+          const auth = existingSubscription.getKey('auth');
+          
+          if (p256dh && auth) {
+            this.pushSubscription = {
+              endpoint: existingSubscription.endpoint,
+              keys: {
+                p256dh: btoa(String.fromCharCode(...new Uint8Array(p256dh))),
+                auth: btoa(String.fromCharCode(...new Uint8Array(auth)))
+              }
+            };
+            console.log('Notification Service: Existing push subscription found');
+            return;
+          } else {
+            // Invalid subscription, unsubscribe and create new one
+            console.log('Notification Service: Existing subscription is invalid, unsubscribing...');
+            await existingSubscription.unsubscribe();
           }
-        };
-        console.log('Notification Service: Existing push subscription found');
-        return;
+        } catch (error) {
+          // Invalid subscription, unsubscribe and create new one
+          console.log('Notification Service: Existing subscription error, unsubscribing...', error);
+          try {
+            await existingSubscription.unsubscribe();
+          } catch (unsubError) {
+            // Ignore unsubscribe errors
+          }
+        }
       }
 
       // Request new subscription
@@ -75,13 +102,7 @@ class NotificationService {
         return;
       }
 
-      // Subscribe to push notifications only if VAPID key is configured
-      const vapidKey = import.meta.env['VITE_VAPID_PUBLIC_KEY'];
-      if (!vapidKey) {
-        console.log('Notification Service: VAPID public key not configured, skipping push subscription');
-        return;
-      }
-
+      // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: this.urlBase64ToUint8Array(vapidKey)
