@@ -137,40 +137,33 @@ const Profile: React.FC = () => {
     setEditingState: (value: boolean) => void
   ) => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
+      // Use userService instead of raw fetch
+      const result = await userService.updateProfile(data);
+      
+      if (result.success && result.data) {
+        // Map API response to component's UserProfile type
+        const apiData = result.data as any;
+        const updatedProfile: UserProfile = {
+          ...profile!,
+          ...apiData,
+          isEmailVerified: apiData.isVerified !== undefined ? apiData.isVerified : (profile?.isEmailVerified || false),
+          isPhoneVerified: apiData.isPhoneVerified !== undefined ? apiData.isPhoneVerified : (profile?.isPhoneVerified || false),
+          dateOfBirth: apiData.dob || apiData.dateOfBirth || profile?.dateOfBirth,
+        };
+        setProfile(updatedProfile);
+        setEditingState(false);
         toast({
-          title: "Error",
-          description: "Authentication required",
-          variant: "destructive",
+          title: "Success",
+          description: `${sectionName} updated successfully`,
         });
-        return;
+      } else {
+        throw new Error(result.message || `Failed to update ${sectionName}`);
       }
 
-      const response = await fetch("/api/user/profile", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update ${sectionName}`);
-      }
-
-      const result = await response.json();
-      setProfile(result.data);
-      setEditingState(false);
-      toast({
-        title: "Success",
-        description: `${sectionName} updated successfully`,
-      });
     } catch (error) {
       toast({
         title: "Error",
-        description: `Failed to update ${sectionName}`,
+        description: error instanceof Error ? error.message : `Failed to update ${sectionName}`,
         variant: "destructive",
       });
     }
@@ -915,33 +908,30 @@ const Profile: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formData = new FormData();
-    formData.append("avatar", file);
-
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch("/api/user/profile/avatar", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to upload avatar");
+      // Use userService instead of raw fetch
+      const result = await userService.uploadAvatar(file);
+      
+      if (result.success && result.data) {
+        // Extract avatar URL from response (could be in different fields)
+        const apiData = result.data as any;
+        const avatarUrl = apiData.avatar || apiData.profilePicture || apiData.messPhotoUrl || apiData.data?.avatar;
+        if (avatarUrl) {
+          setProfile((prev) => (prev ? { ...prev, avatar: avatarUrl } : null));
+          toast({
+            title: "Success",
+            description: "Profile picture updated successfully",
+          });
+        } else {
+          throw new Error("Avatar URL not found in response");
+        }
+      } else {
+        throw new Error(result.message || "Failed to upload avatar");
       }
-
-      const data = await response.json();
-      setProfile((prev) => (prev ? { ...prev, avatar: data.avatarUrl } : null));
-      toast({
-        title: "Success",
-        description: "Profile picture updated successfully",
-      });
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to upload profile picture",
+        description: error instanceof Error ? error.message : "Failed to upload profile picture",
         variant: "destructive",
       });
     }
