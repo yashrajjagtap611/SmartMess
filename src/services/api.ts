@@ -9,6 +9,7 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
 // API Configuration - Use relative URL since Vite proxy handles backend routing
 // Normalize URL: handle all edge cases to prevent double slashes
 const rawApiUrl = import.meta.env['VITE_API_BASE_URL'] || '/api';
+const envValue = import.meta.env['VITE_API_BASE_URL'];
 
 let API_BASE_URL: string;
 if (rawApiUrl.startsWith('http')) {
@@ -25,21 +26,37 @@ if (rawApiUrl.startsWith('http')) {
 
 // Debug log in development and production (to help troubleshoot)
 if (import.meta.env.DEV) {
-  console.log('API Base URL configured:', {
+  console.log('🔧 API Base URL configured (DEV):', {
+    envValue: envValue || '(not set)',
     raw: rawApiUrl,
     normalized: API_BASE_URL
   });
 } else {
-  // Production log - helps debug if VITE_API_BASE_URL is not set
+  // Production log - ALWAYS show to help debug
+  console.group('🌐 API Configuration (Production)');
+  console.log('Environment Variable Value:', envValue || '(NOT SET - using default /api)');
+  console.log('Raw API URL:', rawApiUrl);
+  console.log('Normalized API URL:', API_BASE_URL);
+  
   if (!rawApiUrl.startsWith('http')) {
-    console.warn('⚠️ VITE_API_BASE_URL is not set correctly in production!', {
-      raw: rawApiUrl,
-      normalized: API_BASE_URL,
-      message: 'API calls will fail. Set VITE_API_BASE_URL=https://smartmessserver.onrender.com/api in Vercel environment variables.'
-    });
+    console.error('❌ PROBLEM DETECTED: VITE_API_BASE_URL is not set correctly!');
+    console.error('Current value:', envValue || '(undefined)');
+    console.error('Expected value: https://smartmessserver.onrender.com/api');
+    console.error('');
+    console.error('🔧 FIX STEPS:');
+    console.error('1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables');
+    console.error('2. Add/Edit: VITE_API_BASE_URL = https://smartmessserver.onrender.com/api');
+    console.error('3. Select ALL environments (Production, Preview, Development)');
+    console.error('4. Click Save');
+    console.error('5. Go to Deployments → Click ⋯ → Redeploy');
+    console.error('');
+    console.error('⚠️ API calls will go to:', window.location.origin + API_BASE_URL);
+    console.error('⚠️ They should go to: https://smartmessserver.onrender.com/api');
   } else {
-    console.log('✅ API Base URL configured for production:', API_BASE_URL);
+    console.log('✅ API Base URL configured correctly:', API_BASE_URL);
+    console.log('✅ API calls will go to:', API_BASE_URL);
   }
+  console.groupEnd();
 }
 
 const API_TIMEOUT = 30000; // 30 seconds for better reliability
