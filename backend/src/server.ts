@@ -35,7 +35,7 @@ const server = createServer(app);
 // Trust proxy for accurate IP addresses
 app.set('trust proxy', 1);
 
-// Security middleware
+// Security middleware (includes CORS configuration via corsOptions)
 app.use(securityMiddleware);
 
 // Rate limiting
@@ -45,47 +45,7 @@ app.use(generalRateLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS configuration
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-    'http://localhost:5176',
-    'http://localhost:5177',
-    'http://localhost:5178',
-    'http://localhost:5179',
-    'http://localhost:3000',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000',
-    'http://[::1]:5173',
-    'http://[::1]:3000',
-    'https://smart-mess-ten.vercel.app',
-    'https://smart-mess-ten.vercel.app/',
-    config.frontendUrl
-  ].filter(Boolean); // Remove any undefined values
-  
-  // Normalize origin by removing trailing slash for comparison
-  const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : null;
-  const normalizedAllowedOrigins = allowedOrigins.map(o => String(o).replace(/\/+$/, ''));
-  
-  if (normalizedOrigin && normalizedAllowedOrigins.includes(normalizedOrigin)) {
-    res.header('Access-Control-Allow-Origin', origin!);
-  } else if (config.frontendUrl) {
-    res.header('Access-Control-Allow-Origin', config.frontendUrl);
-  }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+// Note: CORS is handled by securityMiddleware (corsOptions)
 
 // Static file serving
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));

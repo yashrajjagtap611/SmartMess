@@ -59,8 +59,11 @@ export const corsOptions = cors({
       'http://[::1]:5176',
       'http://[::1]:5177',
       'http://[::1]:5178',
-      'http://[::1]:5179'
-    ];
+      'http://[::1]:5179',
+      // Production frontend URLs
+      'https://smart-mess-ten.vercel.app',
+      process.env['FRONTEND_URL'] || ''
+    ].filter(Boolean); // Remove empty strings
     
     // In development, be more permissive
     if (process.env['NODE_ENV'] === 'development') {
@@ -76,11 +79,15 @@ export const corsOptions = cors({
       }
     }
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      logger.info('CORS: Allowing origin from allowed list', { origin });
+    // Normalize origin for comparison (remove trailing slash)
+    const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : null;
+    const normalizedAllowedOrigins = allowedOrigins.map(o => String(o).replace(/\/+$/, ''));
+    
+    if (normalizedOrigin && normalizedAllowedOrigins.includes(normalizedOrigin)) {
+      logger.info('CORS: Allowing origin from allowed list', { origin: normalizedOrigin });
       callback(null, true);
     } else {
-      logger.warn('CORS: Rejecting origin', { origin, allowedOrigins });
+      logger.warn('CORS: Rejecting origin', { origin: normalizedOrigin, allowedOrigins: normalizedAllowedOrigins });
       callback(new Error('Not allowed by CORS'));
     }
   },
