@@ -17,6 +17,8 @@ import {
   parseCollegesInput,
 } from './Profile.utils';
 import { type PlatformCharge } from '@/components/common/PlatformChargesSection';
+import userService from '@/services/api/userService';
+import { messAPI } from '@/services/api';
 
 type UserProfileData = {
   id: string;
@@ -215,36 +217,39 @@ export const useMessOwnerProfile = () => {
         throw new Error('No authentication token found');
       }
 
-      const headers = {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      } as const;
-
-      const userResponse = await fetch('/api/user/profile', { headers });
-      if (!userResponse.ok) {
-        throw new Error(`Failed to fetch profile: ${userResponse.statusText}`);
+      // Use API client services instead of direct fetch
+      const userResponse = await userService.getProfile();
+      if (!userResponse.success || !userResponse.data) {
+        throw new Error(userResponse.message || 'Failed to fetch profile');
       }
 
-      const userPayload: UserProfileApiResponse = await userResponse.json();
+      const userPayload: UserProfileApiResponse = {
+        success: userResponse.success,
+        message: userResponse.message,
+        data: userResponse.data
+      };
       const normalisedUser = normaliseUserProfile(userPayload.data);
 
       let fetchedMess: MessProfileDetails | null = null;
       let messExists = false;
 
       try {
-        const messResponse = await fetch('/api/mess/profile', { headers });
-        if (messResponse.ok) {
-          const messPayload: MessProfileApiResponse = await messResponse.json();
+        const messResponse = await messAPI.getProfile();
+        if (messResponse.data?.success && messResponse.data?.data) {
+          const messPayload: MessProfileApiResponse = {
+            success: messResponse.data.success,
+            message: messResponse.data.message,
+            data: messResponse.data.data
+          };
           fetchedMess = normaliseMessProfile(messPayload.data);
           messExists = true;
-        } else if (messResponse.status === 404) {
+        } else if (messResponse.status === 404 || (messResponse.data && !messResponse.data.success)) {
           messExists = false;
         } else {
-          const errorBody = await messResponse.text();
-          throw new Error(errorBody || 'Failed to fetch mess profile');
+          throw new Error(messResponse.data?.message || 'Failed to fetch mess profile');
         }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('No mess profile')) {
+      } catch (error: any) {
+        if (error.response?.status === 404 || (error instanceof Error && error.message.includes('No mess profile'))) {
           messExists = false;
         } else if (error) {
           console.warn('Mess profile fetch warning:', error);
